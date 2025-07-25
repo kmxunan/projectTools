@@ -2329,27 +2329,79 @@ a:hover {
   transform: translateY(-50%) translateX(0);
 }
 
-/* 现代化模态框样式 */
+/* 现代化模态框样式 - 防闪烁版本 */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  display: flex;
+  background: rgba(0, 0, 0, 0.5) !important;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
-  opacity: 0;
-  visibility: hidden;
-  transition: var(--transition-normal);
+  z-index: 2147483647 !important;
+  /* 使用display控制显示隐藏，避免opacity闪烁 */
+  display: none !important;
+  /* 移除可能导致闪烁的效果 */
+  backdrop-filter: none !important;
+  transition: none !important;
+}
+
+/* 修复地图在模态框中的z-index问题 - 简化版本 */
+.modal .amap-container {
+  z-index: 1 !important;
+  position: relative !important;
+}
+
+.modal #map-container,
+.modal #edit-map-container {
+  z-index: 1 !important;
+  position: relative !important;
+  isolation: isolate;
+}
+
+/* 重置高德地图元素 */
+.modal [class*="amap"] {
+  z-index: 1 !important;
+}
+
+/* 移除可能导致闪烁的伪元素 */
+
+.modal .modal-dialog {
+  z-index: 2147483646 !important;
+  position: relative !important;
+}
+
+.modal .modal-content {
+  z-index: 2147483645 !important;
+  position: relative !important;
+}
+
+/* 确保地图控件在模态框中正常显示 */
+.modal .amap-logo,
+.modal .amap-copyright,
+.modal .amap-controls,
+.modal .amap-toolbar {
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* 特别处理地图容器 */
+#mapSelectModal .modal-body,
+#editMapSelectModal .modal-body {
+  position: relative;
+  z-index: 2147483644 !important;
+}
+
+#mapSelectModal #map-container,
+#editMapSelectModal #edit-map-container {
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate;
 }
 
 .modal.show {
-  opacity: 1;
-  visibility: visible;
+  display: flex !important;
 }
 
 .modal-dialog {
@@ -2360,13 +2412,14 @@ a:hover {
   width: 90%;
   max-height: 90vh;
   overflow: hidden;
-  transform: scale(0.9) translateY(-20px);
-  transition: var(--transition-normal);
+  /* 移除可能导致闪烁的transform和transition */
+  transform: none !important;
+  transition: none !important;
   border: 1px solid var(--gray-200);
 }
 
 .modal.show .modal-dialog {
-  transform: scale(1) translateY(0);
+  transform: none !important;
 }
 
 .modal-header {
@@ -3765,6 +3818,29 @@ a:hover {
     border: 1px solid var(--gray-100);
   }
   
+  /* KPI卡片移动端优化 */
+  .kpi-card {
+    margin-bottom: 1rem !important;
+  }
+  
+  .kpi-card .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  .kpi-card .responsive-flex {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 1rem;
+  }
+  
+  .kpi-card .kpi-icon {
+    margin: 0 auto 0.5rem auto !important;
+  }
+  
+  .kpi-card h2 {
+    font-size: 2rem !important;
+  }
+  
   .mobile-card-header {
     display: flex;
     justify-content: space-between;
@@ -3818,6 +3894,49 @@ a:hover {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
   }
+  
+  /* 移动端按钮组优化 */
+  .btn-group.mobile-stack {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  
+  .btn-group.mobile-stack .btn {
+    border-radius: var(--radius-md) !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  .btn-group.mobile-stack .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* 表格操作按钮移动端优化 */
+  .table-actions {
+    justify-content: center !important;
+  }
+  
+  .table-actions .btn {
+    min-width: 60px;
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  /* 空状态移动端优化 */
+  .modern-empty-state {
+    padding: 2rem 1rem !important;
+    margin: 1rem 0;
+  }
+  
+  .modern-empty-state-icon {
+    font-size: 3rem !important;
+  }
+  
+  .empty-state-title {
+    font-size: 1.25rem !important;
+  }
+  
+  .empty-state-description {
+    font-size: 0.875rem !important;
+  }
 }
 
 /* 桌面端专用工具类 */
@@ -3854,13 +3973,26 @@ a:hover {
 .responsive-grid {
   display: grid;
   gap: var(--spacing-md);
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 992px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-sm);
+  }
 }
 
 @media (max-width: 768px) {
   .responsive-grid {
     grid-template-columns: 1fr;
     gap: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 576px) {
+  .responsive-grid {
+    gap: var(--spacing-xs);
   }
 }
 
@@ -4065,19 +4197,24 @@ a:hover {
   .table-responsive {
     border-radius: var(--radius-md);
     box-shadow: inset 0 0 0 1px var(--gray-200);
+    position: relative;
   }
   
   .table-responsive::before {
     content: '← 左右滑动查看更多';
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    position: sticky;
+    top: 0;
+    right: 0;
     font-size: 0.75rem;
     color: var(--gray-500);
-    background: var(--white);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     z-index: 10;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-200);
+    backdrop-filter: blur(10px);
+    margin-bottom: 0.5rem;
   }
 }
 

@@ -415,9 +415,9 @@
                         <label for="edit-address-input" class="form-label">项目地址</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="edit-address-input" name="address"
-                                   placeholder="请输入地址或通过地图选择" value="{{ project.address or '' }}">
-                            <button type="button" class="btn btn-outline-primary" id="edit-map-select-btn">
-                                <i class="bi bi-map-marker-alt"></i> 地图选择
+                                   placeholder="请输入地址" value="{{ project.address or '' }}">
+                            <button type="button" class="btn btn-outline-primary" id="edit-get-location-btn">
+                                <i class="bi bi-geo-alt-fill"></i> 获取当前位置
                             </button>
                         </div>
                         <div id="edit-address-suggestions" class="list-group position-absolute" style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
@@ -429,6 +429,34 @@
                     <input type="hidden" id="edit-hidden-district" name="district" value="{{ project.district or '' }}">
                     <input type="hidden" id="edit-hidden-longitude" name="longitude" value="{{ project.longitude or '' }}">
                     <input type="hidden" id="edit-hidden-latitude" name="latitude" value="{{ project.latitude or '' }}">
+                    
+                    <!-- 地图搜索和选择区域 -->
+                    <div class="mt-3">
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="edit-map-search-input" class="form-control" placeholder="在地图上搜索地址...">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchOnEditMap($('#edit-map-search-input').val())">
+                                    <i class="bi bi-search"></i> 搜索
+                                </button>
+                            </div>
+                        </div>
+                        <div id="edit-map-container" style="height: 400px; border: 1px solid #ddd; border-radius: 5px;"></div>
+                        <div class="mt-3">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <strong>选择的地址：</strong>
+                                    <span id="edit-selected-address">请在地图上点击选择位置</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>坐标：</strong>
+                                    <span id="edit-selected-coordinates">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- 显示当前选择的详细信息 -->
                     <div class="row" id="edit-location-info" {% if not project.address %}style="display: none;"{% endif %}>
@@ -470,254 +498,344 @@
     </div>
 </div>
 
-<!-- 地图选择模态框 -->
-<div class="modal fade" id="editMapSelectModal" tabindex="-1" aria-labelledby="editMapSelectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editMapSelectModalLabel">选择项目位置</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-8">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="edit-map-search-input" placeholder="搜索地址或地点">
-                            <button type="button" class="btn btn-outline-primary" onclick="searchOnEditMap($('#edit-map-search-input').val())">
-                                <i class="bi bi-search"></i> 搜索
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <button type="button" class="btn btn-outline-success" id="edit-get-location-btn">
-                            <i class="bi bi-geo-alt-fill"></i> 获取当前位置
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="edit-map-container" style="height: 400px; border: 1px solid #ddd; border-radius: 5px;"></div>
-                
-                <div class="mt-3">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <strong>选择的地址：</strong>
-                            <span id="edit-selected-address">请在地图上点击选择位置</span>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>坐标：</strong>
-                            <span id="edit-selected-coordinates">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" id="edit-confirm-location-btn" disabled>确认选择</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- 高德地图API -->
+<script type="text/javascript">
+    window._AMapSecurityConfig = {
+        securityJsCode: '6742ddf5fc00f09183f2f0a43e933f56',
+    }
+</script>
 <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=8398f6f401c52243bd6b510e638c2353&plugin=AMap.Geocoder,AMap.Geolocation"></script>
 
 <script>
-let map, editMap, marker, editMarker;
-
-// 初始化地图
-function initMaps() {
-    // 详情页地图
+$(document).ready(function() {
+    // 初始化项目位置地图
     {% if project.longitude and project.latitude %}
-    map = new AMap.Map('map', {
+    // 初始化第一个地图容器 (project-map)
+    var projectMap = new AMap.Map('project-map', {
         zoom: 15,
         center: [{{ project.longitude }}, {{ project.latitude }}]
     });
     
-    marker = new AMap.Marker({
+    var projectMarker = new AMap.Marker({
         position: [{{ project.longitude }}, {{ project.latitude }}],
+        map: projectMap,
         title: '{{ project.name }}'
     });
     
-    map.add(marker);
-    
-    // 添加信息窗体
-    const infoWindow = new AMap.InfoWindow({
-        content: `
-            <div style="padding: 10px;">
-                <h6>{{ project.name }}</h6>
-                <p><i class="bi bi-geo-alt"></i> {{ project.address or '项目位置' }}</p>
-                <p><i class="bi bi-lightning-charge"></i> {{ project.project_type }} - {{ project.capacity_mw }}MW</p>
-            </div>
-        `
+    // 初始化第二个地图容器 (map)
+    var mainMap = new AMap.Map('map', {
+        zoom: 15,
+        center: [{{ project.longitude }}, {{ project.latitude }}]
     });
     
-    marker.on('click', function() {
-        infoWindow.open(map, marker.getPosition());
-    });
-    {% endif %}
-}
-
-// 初始化编辑地图
-function initEditMap() {
-    const lng = {{ project.longitude or 116.397428 }};
-    const lat = {{ project.latitude or 39.90923 }};
-    
-    editMap = new AMap.Map('editMap', {
-        zoom: 12,
-        center: [lng, lat]
-    });
-    
-    {% if project.longitude and project.latitude %}
-    editMarker = new AMap.Marker({
-        position: [lng, lat],
-        draggable: true
-    });
-    
-    editMap.add(editMarker);
-    
-    editMarker.on('dragend', function() {
-        const position = editMarker.getPosition();
-        document.getElementById('longitude').value = position.lng.toFixed(6);
-        document.getElementById('latitude').value = position.lat.toFixed(6);
+    var mainMarker = new AMap.Marker({
+        position: [{{ project.longitude }}, {{ project.latitude }}],
+        map: mainMap,
+        title: '{{ project.name }}'
     });
     {% endif %}
     
-    // 地图点击事件
-    editMap.on('click', function(e) {
-        const lng = e.lnglat.lng;
-        const lat = e.lnglat.lat;
-        
-        if (editMarker) {
-            editMarker.setPosition([lng, lat]);
-        } else {
-            editMarker = new AMap.Marker({
-                position: [lng, lat],
-                draggable: true
-            });
-            editMap.add(editMarker);
-            
-            editMarker.on('dragend', function() {
-                const position = editMarker.getPosition();
-                document.getElementById('longitude').value = position.lng.toFixed(6);
-                document.getElementById('latitude').value = position.lat.toFixed(6);
-            });
+    // 编辑模态框相关变量
+    let editMap = null;
+    let editMarker = null;
+    let editGeocoder = null;
+    let editPlaceSearch = null;
+    let editSelectedLocation = null;
+    
+    // 初始化编辑地址输入框的值
+    function initializeEditAddressInput() {
+        const address = $('#edit-hidden-address').val() || $('#edit-address-input').val();
+        if (address) {
+            $('#edit-address-input').val(address);
+            updateEditLocationInfo();
         }
-        
-        document.getElementById('longitude').value = lng.toFixed(6);
-        document.getElementById('latitude').value = lat.toFixed(6);
-    });
-}
-
-// 获取当前位置
-function getCurrentLocation() {
-    const geolocation = new AMap.Geolocation({
-        enableHighAccuracy: true,
-        timeout: 10000
-    });
-    
-    geolocation.getCurrentPosition(function(status, result) {
-        if (status === 'complete') {
-            const lng = result.position.lng;
-            const lat = result.position.lat;
-            
-            document.getElementById('longitude').value = lng.toFixed(6);
-            document.getElementById('latitude').value = lat.toFixed(6);
-            
-            if (editMarker) {
-                editMarker.setPosition([lng, lat]);
-            } else {
-                editMarker = new AMap.Marker({
-                    position: [lng, lat],
-                    draggable: true
-                });
-                editMap.add(editMarker);
-                
-                editMarker.on('dragend', function() {
-                    const position = editMarker.getPosition();
-                    document.getElementById('longitude').value = position.lng.toFixed(6);
-                    document.getElementById('latitude').value = position.lat.toFixed(6);
-                });
-            }
-            
-            editMap.setCenter([lng, lat]);
-            editMap.setZoom(15);
-            
-            alert('定位成功！');
-        } else {
-            alert('定位失败：' + result.message);
-        }
-    });
-}
-
-// 地址解析
-function searchAddress() {
-    const province = document.getElementById('province').value;
-    const city = document.getElementById('city').value;
-    const district = document.getElementById('district').value;
-    const address = document.getElementById('address').value;
-    
-    const fullAddress = [province, city, district, address].filter(Boolean).join('');
-    
-    if (!fullAddress) {
-        alert('请先输入地址信息');
-        return;
     }
     
-    const geocoder = new AMap.Geocoder();
+    // 页面加载时初始化
+    initializeEditAddressInput();
     
-    geocoder.getLocation(fullAddress, function(status, result) {
-        if (status === 'complete' && result.geocodes.length > 0) {
-            const location = result.geocodes[0].location;
-            const lng = location.lng;
-            const lat = location.lat;
-            
-            document.getElementById('longitude').value = lng.toFixed(6);
-            document.getElementById('latitude').value = lat.toFixed(6);
-            
-            if (editMarker) {
-                editMarker.setPosition([lng, lat]);
+    // 编辑地址输入框搜索功能
+    let editSearchTimeout;
+    $('#edit-address-input').on('input', function() {
+        const keyword = $(this).val().trim();
+        
+        clearTimeout(editSearchTimeout);
+        
+        if (keyword.length < 2) {
+            $('#edit-address-suggestions').hide();
+            return;
+        }
+        
+        editSearchTimeout = setTimeout(function() {
+            searchEditAddress(keyword);
+        }, 300);
+    });
+    
+    // 搜索编辑地址
+    function searchEditAddress(keyword) {
+        if (!editPlaceSearch) {
+            editPlaceSearch = new AMap.PlaceSearch({
+                pageSize: 5,
+                pageIndex: 1,
+                city: '全国'
+            });
+        }
+        
+        editPlaceSearch.search(keyword, function(status, result) {
+            if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+                showEditAddressSuggestions(result.poiList.pois);
             } else {
-                editMarker = new AMap.Marker({
-                    position: [lng, lat],
-                    draggable: true
-                });
-                editMap.add(editMarker);
-                
-                editMarker.on('dragend', function() {
-                    const position = editMarker.getPosition();
-                    document.getElementById('longitude').value = position.lng.toFixed(6);
-                    document.getElementById('latitude').value = position.lat.toFixed(6);
-                });
+                $('#edit-address-suggestions').hide();
             }
+        });
+    }
+    
+    // 显示编辑地址建议
+    function showEditAddressSuggestions(pois) {
+        const suggestions = $('#edit-address-suggestions');
+        suggestions.empty();
+        
+        pois.forEach(function(poi) {
+            const item = $(`
+                <a href="#" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${poi.name}</h6>
+                        <small class="text-muted">${poi.type}</small>
+                    </div>
+                    <p class="mb-1">${poi.address}</p>
+                    <small class="text-muted">${poi.cityname} ${poi.adname}</small>
+                </a>
+            `);
             
-            editMap.setCenter([lng, lat]);
-            editMap.setZoom(15);
+            item.on('click', function(e) {
+                e.preventDefault();
+                selectEditAddressFromSuggestion(poi);
+            });
             
-            alert('地址解析成功！');
-        } else {
-            alert('地址解析失败，请检查地址信息');
+            suggestions.append(item);
+        });
+        
+        suggestions.show();
+    }
+    
+    // 从建议中选择编辑地址
+    function selectEditAddressFromSuggestion(poi) {
+        const fullAddress = poi.address + poi.name;
+        $('#edit-address-input').val(fullAddress);
+        $('#edit-address-suggestions').hide();
+        
+        // 更新隐藏字段
+        updateEditHiddenFields({
+            address: fullAddress,
+            province: poi.pname,
+            city: poi.cityname,
+            district: poi.adname,
+            longitude: poi.location.lng,
+            latitude: poi.location.lat
+        });
+        
+        // 在地图上显示选中的位置
+        if (editMap && poi.location) {
+            selectEditLocationOnMap(poi.location.lng, poi.location.lat);
+            editMap.setCenter([poi.location.lng, poi.location.lat]);
+            editMap.setZoom(15); // 设置合适的缩放级别
+        }
+        
+        updateEditLocationInfo();
+    }
+    
+    // 点击其他地方隐藏建议
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#edit-address-input, #edit-address-suggestions').length) {
+            $('#edit-address-suggestions').hide();
         }
     });
-}
+    
+    // 页面加载时直接初始化编辑地图
+    initEditMap();
+    
+    // 初始化编辑地图
+    function initEditMap() {
+        if (editMap) return;
+        
+        editMap = new AMap.Map('edit-map-container', {
+            zoom: 10,
+            center: [116.397428, 39.90923] // 默认北京
+        });
+        
+        editGeocoder = new AMap.Geocoder();
+        
+        // 地图点击事件
+        editMap.on('click', function(e) {
+            const lnglat = e.lnglat;
+            selectEditLocationOnMap(lnglat.lng, lnglat.lat);
+        });
+        
+        // 如果已有坐标，显示在地图上
+        const lng = $('#edit-hidden-longitude').val();
+        const lat = $('#edit-hidden-latitude').val();
+        if (lng && lat) {
+            selectEditLocationOnMap(parseFloat(lng), parseFloat(lat));
+            editMap.setCenter([lng, lat]);
+        }
+    }
+    
+    // 在编辑地图上选择位置
+    function selectEditLocationOnMap(lng, lat) {
+        // 移除旧标记
+        if (editMarker) {
+            editMap.remove(editMarker);
+        }
+        
+        // 添加新标记
+        editMarker = new AMap.Marker({
+            position: [lng, lat],
+            map: editMap
+        });
+        
+        editSelectedLocation = { lng: lng, lat: lat };
+        $('#edit-selected-coordinates').text(`${lng.toFixed(6)}, ${lat.toFixed(6)}`);
+        
+        // 直接更新隐藏字段
+        updateEditHiddenFields({
+            longitude: lng,
+            latitude: lat
+        });
+        
+        // 反向地理编码
+        editGeocoder.getAddress([lng, lat], function(status, result) {
+            console.log('编辑页面反向地理编码状态:', status);
+            console.log('编辑页面反向地理编码结果:', result);
+            
+            if (status === 'complete' && result.regeocode) {
+                const address = result.regeocode.formattedAddress;
+                $('#edit-selected-address').text(address);
+                
+                editSelectedLocation.address = address;
+                editSelectedLocation.province = result.regeocode.addressComponent.province;
+                editSelectedLocation.city = result.regeocode.addressComponent.city;
+                editSelectedLocation.district = result.regeocode.addressComponent.district;
+                
+                // 直接更新地址输入框和隐藏字段
+                $('#edit-address-input').val(address);
+                updateEditHiddenFields(editSelectedLocation);
+                updateEditLocationInfo();
+                
+                console.log('编辑页面地址已更新:', address);
+            } else {
+                console.error('编辑页面反向地理编码失败:', status, result);
+                alert('获取地址信息失败，请检查网络连接或稍后重试');
+            }
+        });
+    }
+    
+    // 编辑地图搜索
+    window.searchOnEditMap = function(keyword) {
+        if (!editPlaceSearch) {
+            editPlaceSearch = new AMap.PlaceSearch({
+                map: editMap,
+                pageSize: 1
+            });
+        }
+        
+        editPlaceSearch.search(keyword, function(status, result) {
+            if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+                const poi = result.poiList.pois[0];
+                selectEditLocationOnMap(poi.location.lng, poi.location.lat);
+                editMap.setCenter([poi.location.lng, poi.location.lat]);
+            }
+        });
+    };
+    
+    // 获取当前位置（编辑）
+    $('#edit-get-location-btn').on('click', function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lng = position.coords.longitude;
+                const lat = position.coords.latitude;
+                selectEditLocationOnMap(lng, lat);
+                editMap.setCenter([lng, lat]);
+            }, function(error) {
+                alert('无法获取当前位置：' + error.message);
+            });
+        } else {
+            alert('您的浏览器不支持地理定位功能');
+        }
+    });
+    
 
-// 地图选点
-function selectOnMap() {
-    alert('请在地图上点击选择位置，或拖拽标记到目标位置');
-}
+    
+    // 更新编辑隐藏字段
+    function updateEditHiddenFields(data) {
+        if (data.address) $('#edit-hidden-address').val(data.address);
+        if (data.province) $('#edit-hidden-province').val(data.province);
+        if (data.city) $('#edit-hidden-city').val(data.city);
+        if (data.district) $('#edit-hidden-district').val(data.district);
+        if (data.longitude) $('#edit-hidden-longitude').val(data.longitude);
+        if (data.latitude) $('#edit-hidden-latitude').val(data.latitude);
+    }
+    
+    // 更新编辑位置信息显示
+    function updateEditLocationInfo() {
+        const province = $('#edit-hidden-province').val();
+        const city = $('#edit-hidden-city').val();
+        const district = $('#edit-hidden-district').val();
+        const longitude = $('#edit-hidden-longitude').val();
+        const latitude = $('#edit-hidden-latitude').val();
+        
+        const region = [province, city, district].filter(Boolean).join(' ');
+        $('#edit-display-region').text(region || '未设置');
+        
+        if (longitude && latitude) {
+            $('#edit-display-coordinates').text(`${parseFloat(longitude).toFixed(6)}, ${parseFloat(latitude).toFixed(6)}`);
+            $('#edit-location-info').show();
+        } else {
+            $('#edit-display-coordinates').text('未设置');
+            if (!region) {
+                $('#edit-location-info').hide();
+            }
+        }
+    }
+    
+
+    
+    // 表单提交
+    $('#locationForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = {
+            address: $('#edit-address-input').val(),
+            province: $('#edit-hidden-province').val(),
+            city: $('#edit-hidden-city').val(),
+            district: $('#edit-hidden-district').val(),
+            longitude: $('#edit-hidden-longitude').val(),
+            latitude: $('#edit-hidden-latitude').val()
+        };
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('地理信息更新成功！');
+                    location.reload();
+                } else {
+                    alert('更新失败：' + (response.message || '未知错误'));
+                }
+            },
+            error: function() {
+                alert('网络错误，请稍后重试');
+            }
+        });
+    });
+});
 
 function confirmDelete(projectId) {
     document.getElementById('deleteForm').action = `/project/${projectId}/delete`;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
-
-// 页面加载完成后初始化地图
-document.addEventListener('DOMContentLoaded', function() {
-    initMaps();
-    
-    // 模态框显示时初始化编辑地图
-    document.getElementById('editLocationModal').addEventListener('shown.bs.modal', function() {
-        setTimeout(initEditMap, 100);
-    });
-});
 </script>
 {% endblock %}

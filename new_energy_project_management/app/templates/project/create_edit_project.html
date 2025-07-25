@@ -99,18 +99,46 @@
                             <div class="row responsive-grid">
                                 <div class="col-12">
                                     <div class="form-group mb-3">
-                                        <label class="form-label responsive-text">项目地址</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-geo-alt"></i>
-                                            </span>
-                                            <input type="text" id="address-input" class="form-control" placeholder="请输入项目地址或点击地图选择位置" autocomplete="off">
-                                            <button type="button" class="btn btn-outline-secondary" id="map-select-btn">
-                                                <i class="bi bi-map"></i> 地图选择
-                                            </button>
-                                        </div>
-                                        <div id="address-suggestions" class="list-group position-absolute" style="z-index: 1000; width: calc(100% - 120px); margin-left: 42px; display: none;"></div>
+                                <label class="form-label responsive-text">项目地址</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </span>
+                                    <input type="text" id="address-input" class="form-control" placeholder="请输入项目地址" autocomplete="off">
+                                    <button type="button" class="btn btn-outline-secondary" id="get-location-btn">
+                                        <i class="bi bi-geo-alt"></i> 当前位置
+                                    </button>
+                                </div>
+                                <div id="address-suggestions" class="list-group position-absolute" style="z-index: 1000; width: calc(100% - 120px); margin-left: 42px; display: none;"></div>
+                            </div>
+                            
+                            <!-- 地图搜索和选择区域 -->
+                            <div class="mt-3">
+                                <div class="mb-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="text" id="map-search-input" class="form-control" placeholder="在地图上搜索地址...">
+                                        <button type="button" class="btn btn-outline-primary" onclick="searchOnMap($('#map-search-input').val())">
+                                            <i class="bi bi-search"></i> 搜索
+                                        </button>
                                     </div>
+                                </div>
+                                <div id="map-container" style="height: 400px; border: 1px solid #ddd; border-radius: 4px;"></div>
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <strong>选中地址：</strong>
+                                            <span id="selected-address">请在地图上点击选择位置</span>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <strong>坐标：</strong>
+                                            <span id="selected-coordinates">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                                 </div>
                             </div>
                             
@@ -122,53 +150,11 @@
                             {{ form.longitude(style="display: none;", id="hidden-longitude") }}
                             {{ form.latitude(style="display: none;", id="hidden-latitude") }}
                             
-                            <!-- 地图选择模态框 -->
-                            <div class="modal fade" id="mapSelectModal" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">
-                                                <i class="bi bi-map me-2"></i>选择项目位置
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <div class="input-group">
-                                                    <span class="input-group-text">
-                                                        <i class="bi bi-search"></i>
-                                                    </span>
-                                                    <input type="text" id="map-search-input" class="form-control" placeholder="搜索地址...">
-                                                    <button type="button" class="btn btn-outline-secondary" id="get-location-btn">
-                                                        <i class="bi bi-geo-alt"></i> 当前位置
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div id="map-container" style="height: 400px; border: 1px solid #ddd; border-radius: 4px;"></div>
-                                            <div class="mt-3">
-                                                <div class="row">
-                                                    <div class="col-md-8">
-                                                        <strong>选中地址：</strong>
-                                                        <span id="selected-address">请在地图上点击选择位置</span>
-                                                    </div>
-                                                    <div class="col-md-4 text-end">
-                                                        <strong>坐标：</strong>
-                                                        <span id="selected-coordinates">-</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                            <button type="button" class="btn btn-primary" id="confirm-location-btn" disabled>确认选择</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
                             
                             <div class="alert alert-info" role="alert">
                                 <i class="bi bi-info-circle me-2"></i>
-                                <strong>提示：</strong>您可以直接输入地址搜索，或点击"地图选择"按钮在地图上选择项目位置。
+                                <strong>提示：</strong>您可以直接输入地址搜索，或在下方地图上点击选择项目位置。
                             </div>
                         </div>
                     </div>
@@ -222,10 +208,22 @@
 </div>
 
 <!-- 高德地图API -->
-<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=8398f6f401c52243bd6b510e638c2353&plugin=AMap.PlaceSearch,AMap.Autocomplete,AMap.Geocoder"></script>
+<script type="text/javascript">
+    window._AMapSecurityConfig = {
+        securityJsCode: '6742ddf5fc00f09183f2f0a43e933f56',
+    }
+</script>
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=8398f6f401c52243bd6b510e638c2353&plugin=AMap.PlaceSearch,AMap.Autocomplete,AMap.Geocoder"></script>
 
 <script>
-$(document).ready(function() {
+// 确保jQuery加载完成后再执行
+function initializeMapFunctionality() {
+    if (typeof $ === 'undefined') {
+        setTimeout(initializeMapFunctionality, 100);
+        return;
+    }
+    
+    $(document).ready(function() {
     let map = null;
     let marker = null;
     let geocoder = null;
@@ -323,6 +321,13 @@ $(document).ready(function() {
             longitude: poi.location.lng,
             latitude: poi.location.lat
         });
+        
+        // 在地图上显示选中的位置
+        if (map && poi.location) {
+            selectLocationOnMap(poi.location.lng, poi.location.lat);
+            map.setCenter([poi.location.lng, poi.location.lat]);
+            map.setZoom(15); // 设置合适的缩放级别
+        }
     }
     
     // 点击其他地方隐藏建议
@@ -332,11 +337,8 @@ $(document).ready(function() {
         }
     });
     
-    // 地图选择按钮
-    $('#map-select-btn').on('click', function() {
-        $('#mapSelectModal').modal('show');
-        setTimeout(initMap, 500); // 延迟初始化地图
-    });
+    // 页面加载时直接初始化地图
+    initMap();
     
     // 初始化地图
     function initMap() {
@@ -379,10 +381,18 @@ $(document).ready(function() {
         
         selectedLocation = { lng: lng, lat: lat };
         $('#selected-coordinates').text(`${lng.toFixed(6)}, ${lat.toFixed(6)}`);
-        $('#confirm-location-btn').prop('disabled', false);
+        
+        // 直接更新地址输入框和隐藏字段
+        updateHiddenFields({
+            longitude: lng,
+            latitude: lat
+        });
         
         // 反向地理编码
         geocoder.getAddress([lng, lat], function(status, result) {
+            console.log('反向地理编码状态:', status);
+            console.log('反向地理编码结果:', result);
+            
             if (status === 'complete' && result.regeocode) {
                 const address = result.regeocode.formattedAddress;
                 $('#selected-address').text(address);
@@ -391,6 +401,15 @@ $(document).ready(function() {
                 selectedLocation.province = result.regeocode.addressComponent.province;
                 selectedLocation.city = result.regeocode.addressComponent.city;
                 selectedLocation.district = result.regeocode.addressComponent.district;
+                
+                // 直接更新地址输入框和隐藏字段
+                $('#address-input').val(address);
+                updateHiddenFields(selectedLocation);
+                
+                console.log('地址已更新:', address);
+            } else {
+                console.error('反向地理编码失败:', status, result);
+                alert('获取地址信息失败，请检查网络连接或稍后重试');
             }
         });
     }
@@ -402,8 +421,8 @@ $(document).ready(function() {
         }
     });
     
-    // 在地图上搜索
-    function searchOnMap(keyword) {
+    // 在地图上搜索（全局函数）
+    window.searchOnMap = function(keyword) {
         if (!placeSearch) {
             placeSearch = new AMap.PlaceSearch({
                 map: map,
@@ -436,14 +455,7 @@ $(document).ready(function() {
         }
     });
     
-    // 确认选择位置
-    $('#confirm-location-btn').on('click', function() {
-        if (selectedLocation) {
-            $('#address-input').val(selectedLocation.address || '');
-            updateHiddenFields(selectedLocation);
-            $('#mapSelectModal').modal('hide');
-        }
-    });
+
     
     // 更新隐藏字段
     function updateHiddenFields(data) {
@@ -455,15 +467,12 @@ $(document).ready(function() {
         if (data.latitude) $('#hidden-latitude').val(data.latitude);
     }
     
-    // 模态框关闭时重置
-    $('#mapSelectModal').on('hidden.bs.modal', function() {
-        $('#map-search-input').val('');
-        $('#selected-address').text('请在地图上点击选择位置');
-        $('#selected-coordinates').text('-');
-        $('#confirm-location-btn').prop('disabled', true);
-        selectedLocation = null;
-    });
-});
+
+    }); // End of $(document).ready
+} // End of initializeMapFunctionality
+
+// 启动初始化
+initializeMapFunctionality();
 </script>
 
 {% endblock %}
