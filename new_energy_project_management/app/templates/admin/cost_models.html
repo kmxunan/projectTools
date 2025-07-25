@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center responsive-flex">
+                <div class="mobile-text-center">
+                    <h1 class="responsive-title mb-0 text-gray-800">造价模型管理</h1>
+                    <p class="text-muted mb-0 responsive-text">管理项目造价计算模型</p>
+                </div>
+                <div class="mobile-full-width mobile-stack">
+                    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary mobile-full-width mb-2">
+                        <i class="fas fa-arrow-left"></i> <span class="mobile-hidden">返回仪表板</span><span class="desktop-hidden">返回</span>
+                    </a>
+                    <button class="btn btn-primary mobile-full-width" data-bs-toggle="modal" data-bs-target="#addModelModal">
+                        <i class="fas fa-plus"></i> <span class="mobile-hidden">添加模型</span><span class="desktop-hidden">添加</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">造价模型列表</h6>
+                </div>
+                <div class="card-body">
+                    {% if cost_models %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="costModelsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>项目类型</th>
+                                        <th>单位标签</th>
+                                        <th>成本项目数</th>
+                                        <th>最后更新</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in cost_models %}
+                                    <tr>
+                                        <td>{{ model.id }}</td>
+                                        <td>
+                                            <span class="badge badge-{% if model.project_type == '集中式光伏' %}success{% else %}info{% endif %}">
+                                                {{ model.project_type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ model.unit_cost_label }}</td>
+                                        <td>{{ model.cost_items|length if model.cost_items else 0 }}</td>
+                                        <td>{{ model.id }}</td> <!-- 这里应该是更新时间，但模型中没有updated_at字段 -->
+                                        <td>
+                            <div class="table-actions d-flex flex-wrap gap-1">
+                                <button class="btn btn-sm btn-outline-info" onclick="viewModelDetails({{ model.id }})" title="查看详情">
+                                    <i class="fas fa-eye"></i> <span class="mobile-hidden">详情</span>
+                                </button>
+                                <a href="{{ url_for('main.admin_edit_cost_model', model_id=model.id) }}" 
+                                   class="btn btn-sm btn-outline-warning" title="编辑">
+                                    <i class="fas fa-edit"></i> <span class="mobile-hidden">编辑</span>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteModel({{ model.id }})" title="删除">
+                                    <i class="fas fa-trash"></i> <span class="mobile-hidden">删除</span>
+                                </button>
+                            </div>
+                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">暂无造价模型数据</p>
+                            <p class="text-info">造价模型需要通过数据库初始化脚本创建</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模型详情说明 -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">造价模型说明</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">集中式光伏造价模型</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> 光伏组件成本</li>
+                                <li><i class="fas fa-check text-success"></i> 逆变器成本</li>
+                                <li><i class="fas fa-check text-success"></i> 支架系统成本</li>
+                                <li><i class="fas fa-check text-success"></i> 电气设备成本</li>
+                                <li><i class="fas fa-check text-success"></i> 土建工程成本</li>
+                                <li><i class="fas fa-check text-success"></i> 安装调试成本</li>
+                                <li><i class="fas fa-check text-success"></i> 其他费用</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">陆上风电造价模型</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-info"></i> 风力发电机组</li>
+                                <li><i class="fas fa-check text-info"></i> 塔筒基础</li>
+                                <li><i class="fas fa-check text-info"></i> 电气设备</li>
+                                <li><i class="fas fa-check text-info"></i> 道路建设</li>
+                                <li><i class="fas fa-check text-info"></i> 升压站</li>
+                                <li><i class="fas fa-check text-info"></i> 送出线路</li>
+                                <li><i class="fas fa-check text-info"></i> 其他费用</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>注意：</strong> 造价模型的修改会影响所有新的成本估算计算。请谨慎操作，建议在修改前备份数据。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模型详情模态框 -->
+<div class="modal fade" id="modelDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">造价模型详情</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modelDetailsContent">
+                <!-- 详情内容将通过JavaScript加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewModelDetails(modelId) {
+    // 显示模态框
+    const modal = document.getElementById('modelDetailsModal');
+    const modalBody = document.getElementById('modelDetailsContent');
+    
+    // 设置加载状态
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">正在加载模型详细信息...</p>
+        </div>
+    `;
+    
+    // 显示模态框
+     const bsModal = new bootstrap.Modal(modal);
+     bsModal.show();
+    
+    // 调用API获取模型详情
+    fetch(`/admin/cost_models/${modelId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络请求失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 格式化成本项目显示
+            let costItemsHtml = '';
+            if (data.cost_items && Object.keys(data.cost_items).length > 0) {
+                costItemsHtml = '<ul class="list-group list-group-flush">';
+                for (const [key, value] of Object.entries(data.cost_items)) {
+                    costItemsHtml += `<li class="list-group-item d-flex justify-content-between"><span>${key}</span><span class="fw-bold">${value}</span></li>`;
+                }
+                costItemsHtml += '</ul>';
+            } else {
+                costItemsHtml = '<p class="text-muted">暂无成本项目数据</p>';
+            }
+            
+            // 格式化成本详情显示
+            let costDetailsHtml = '';
+            if (data.cost_details && Object.keys(data.cost_details).length > 0) {
+                costDetailsHtml = '<ul class="list-group list-group-flush">';
+                for (const [key, value] of Object.entries(data.cost_details)) {
+                    costDetailsHtml += `<li class="list-group-item d-flex justify-content-between"><span>${key}</span><span class="fw-bold">${value}</span></li>`;
+                }
+                costDetailsHtml += '</ul>';
+            } else {
+                costDetailsHtml = '<p class="text-muted">暂无成本详情数据</p>';
+            }
+            
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">基本信息</h6>
+                        <table class="table table-sm">
+                            <tr><td class="fw-bold">模型ID:</td><td>${data.id}</td></tr>
+                            <tr><td class="fw-bold">项目类型:</td><td>${data.project_type}</td></tr>
+                            <tr><td class="fw-bold">单位成本标签:</td><td>${data.unit_cost_label}</td></tr>
+                            <tr><td class="fw-bold">创建时间:</td><td>${data.created_at || '未知'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">成本项目</h6>
+                        ${costItemsHtml}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-primary">成本详情</h6>
+                        ${costDetailsHtml}
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('获取模型详情失败:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>加载失败</h5>
+                    <p>无法获取模型详情，请稍后重试。</p>
+                    <p class="text-muted">错误信息: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// 初始化数据表
+$(document).ready(function() {
+    $('#costModelsTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Chinese.json"
+        },
+        "pageLength": 10,
+        "order": [[ 0, "asc" ]]
+    });
+});
+</script>
+
+<style>
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{{ project.name }} - 上传文档</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.file.label(class="form-label") }}
+                            {{ form.file(class="form-control") }}
+                            {% if form.file.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.file.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                支持的文件类型：
+                                <br>• 文档：PDF、Word(.doc/.docx)、Excel(.xls/.xlsx)、PowerPoint(.ppt/.pptx)、文本(.txt)
+                                <br>• 图片：JPG、PNG、GIF、BMP、SVG
+                                <br>• 网页：HTML、HTM、XML、JSON
+                                <br>• 标记语言：Markdown(.md)
+                                <br>• 思维导图：XMind(.xmind)、MindManager(.mm/.mmap)
+                                <br>• 设计图纸：AutoCAD(.dwg/.dxf/.cad)、Visio(.vsd/.vsdx)
+                                <br>• 压缩包：ZIP、RAR、7Z
+                                <br>• 数据：CSV
+                                <br>最大文件大小：16MB。
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.stage.label(class="form-label") }}
+                            {{ form.stage(class="form-select") }}
+                            {% if form.stage.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.stage.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="请简要描述文档内容...") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.project_documents', project_id=project.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回文档列表
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> 上传文档
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 上传说明 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> 上传说明</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>请根据项目当前阶段选择合适的文档分类</li>
+                        <li>建议为文档添加详细的描述信息，便于团队成员查找</li>
+                        <li>上传的文档将按时间倒序排列显示</li>
+                        <li>只有项目经理、管理员和文档上传者可以删除文档</li>
+                        <li>所有有权限查看项目的用户都可以下载文档</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 文件选择预览
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const fileLabel = document.querySelector('label[for="file"]');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                const fileName = this.files[0].name;
+                const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+                
+                // 创建文件信息显示
+                let fileInfo = document.getElementById('fileInfo');
+                if (!fileInfo) {
+                    fileInfo = document.createElement('div');
+                    fileInfo.id = 'fileInfo';
+                    fileInfo.className = 'mt-2 p-2 bg-light rounded';
+                    this.parentNode.appendChild(fileInfo);
+                }
+                
+                fileInfo.innerHTML = `
+                    <small class="text-muted">
+                        <i class="fas fa-file"></i> 
+                        已选择文件: <strong>${fileName}</strong> (${fileSize} MB)
+                    </small>
+                `;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

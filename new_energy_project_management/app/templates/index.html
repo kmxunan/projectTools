@@ -1,0 +1,848 @@
+{% extends "base.html" %}
+
+{% block title %}项目看板{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 现代化KPI卡片样式 */
+.kpi-card {
+    transition: all var(--transition-normal);
+    border: 1px solid var(--gray-100);
+    background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-color);
+}
+
+.kpi-icon {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.kpi-card:hover .kpi-icon::before {
+    transform: translateX(100%);
+}
+
+.type-indicator, .stage-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.8);
+}
+
+.type-indicator::after, .stage-indicator::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* 现代化卡片样式 */
+.modern-card {
+    border: none;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+    background: var(--white);
+    overflow: hidden;
+    position: relative;
+}
+
+.modern-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.modern-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.modern-card:hover::before {
+    opacity: 1;
+}
+
+.modern-card-header {
+    background: transparent;
+    border: none;
+    padding: 1.5rem 1.5rem 0;
+}
+
+.modern-card-body {
+    padding: 1.5rem;
+}
+
+/* 项目阶段徽章样式 */
+.stage-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid transparent;
+    transition: all var(--transition-normal);
+}
+
+.stage-opportunity {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.stage-development {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.stage-decision {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border-color: #fbbf24;
+}
+
+.stage-construction {
+    background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+    color: #3730a3;
+    border-color: #a5b4fc;
+}
+
+.stage-operation {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border-color: #6ee7b7;
+}
+
+/* 动画效果 */
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.fade-in-up-delay-1 {
+    animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.fade-in-up-delay-2 {
+    animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+.fade-in-up-delay-3 {
+    animation: fadeInUp 0.6s ease-out 0.3s both;
+}
+
+/* 表格现代化样式 */
+.modern-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.modern-table thead th {
+    background: linear-gradient(135deg, var(--gray-50), var(--white));
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+    transition: all var(--transition-fast);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.modern-table tbody tr:hover {
+    background: linear-gradient(135deg, var(--gray-25), var(--white));
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.modern-table tbody td {
+    padding: 1rem;
+    border: none;
+    vertical-align: middle;
+}
+
+/* 空状态现代化样式 */
+.modern-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, var(--gray-25) 0%, var(--white) 100%);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--gray-200);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-empty-state::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+    animation: float 6s ease-in-out infinite;
+}
+
+.modern-empty-state:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, var(--white) 100%);
+}
+
+.modern-empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- 现代化页面头部 -->
+    <div class="container-fluid px-4">
+    <div class="row mb-5 fade-in-up">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center responsive-flex">
+                <div class="mobile-text-center">
+                    <h1 class="mb-3 fw-bold text-dark text-gradient responsive-title">
+                        <i class="bi bi-grid-3x3-gap me-3 text-primary"></i>项目看板
+                        <span class="badge bg-primary ms-3 fs-6 mobile-hidden">Dashboard</span>
+                    </h1>
+                    <p class="text-muted mb-0 fs-5 text-shadow responsive-text">欢迎来到新能源项目管理平台！管理您的所有新能源项目。</p>
+                    <div class="mt-2">
+                        <span class="badge bg-light text-dark me-2">
+                            <i class="bi bi-clock me-1"></i><span class="mobile-hidden">实时数据</span><span class="desktop-hidden">实时</span>
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-shield-check me-1"></i><span class="mobile-hidden">安全可靠</span><span class="desktop-hidden">安全</span>
+                        </span>
+                    </div>
+                </div>
+                {% if not current_user.is_anonymous %}
+                <div class="btn-group mobile-full-width mobile-stack gap-2" role="group">
+                    <a href="{{ url_for('main.export_all_projects_excel') }}" class="btn btn-outline-success btn-lg hover-lift">
+                        <i class="bi bi-download me-2"></i><span class="mobile-hidden">导出汇总报告</span><span class="desktop-hidden">导出</span>
+                    </a>
+                    <a href="{{ url_for('main.create_project') }}" class="btn btn-primary btn-lg hover-lift">
+                        <i class="bi bi-plus-circle me-2"></i><span class="mobile-hidden">创建新项目</span><span class="desktop-hidden">新建</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 现代化核心KPI统计卡片 -->
+    {% if not current_user.is_anonymous %}
+    <div class="row mb-5 responsive-grid">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-4 fade-in-up">
+            <div class="card kpi-card modern-card responsive-card border-0 hover-lift slide-in-left">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center responsive-flex">
+                        <div class="kpi-icon bg-primary bg-opacity-10 rounded-circle me-4 mobile-text-center">
+                            <i class="bi bi-folder text-primary" style="font-size: 1.75rem;"></i>
+                        </div>
+                        <div class="flex-1 mobile-text-center">
+                            <h2 class="mb-1 fw-bold text-dark responsive-text">{{ kpi_data.total_projects }}</h2>
+                            <p class="text-muted mb-0 fw-medium responsive-text">总项目数</p>
+                            <div class="mt-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary">
+                                    <i class="bi bi-arrow-up me-1"></i>活跃
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-4 fade-in-up-delay-1">
+            <div class="card kpi-card modern-card responsive-card border-0 hover-lift slide-in-left" style="animation-delay: 0.1s;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center responsive-flex">
+                        <div class="kpi-icon bg-success bg-opacity-10 rounded-circle me-4 mobile-text-center">
+                            <i class="bi bi-graph-up text-success" style="font-size: 1.75rem;"></i>
+                        </div>
+                        <div class="flex-1 mobile-text-center">
+                            <h2 class="mb-1 fw-bold text-dark responsive-text">{{ kpi_data.total_capacity }}</h2>
+                            <p class="text-muted mb-0 fw-medium responsive-text">总装机容量</p>
+                            <div class="mt-2">
+                                <span class="badge bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-lightning me-1"></i>MW
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-4 fade-in-up-delay-2">
+            <div class="card kpi-card modern-card responsive-card border-0 hover-lift slide-in-left" style="animation-delay: 0.2s;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center responsive-flex">
+                        <div class="kpi-icon bg-warning bg-opacity-10 rounded-circle me-4 mobile-text-center">
+                            <i class="bi bi-currency-yen text-warning" style="font-size: 1.75rem;"></i>
+                        </div>
+                        <div class="flex-1 mobile-text-center">
+                            <h2 class="mb-1 fw-bold text-dark responsive-text">{{ "%.1f"|format(kpi_data.total_investment) }}</h2>
+                            <p class="text-muted mb-0 fw-medium responsive-text">总投资额</p>
+                            <div class="mt-2">
+                                <span class="badge bg-warning bg-opacity-10 text-warning">
+                                    <i class="bi bi-cash me-1"></i>万元
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-4 fade-in-up-delay-3">
+            <div class="card kpi-card modern-card responsive-card border-0 hover-lift slide-in-left" style="animation-delay: 0.3s;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center responsive-flex">
+                        <div class="kpi-icon bg-info bg-opacity-10 rounded-circle me-4 mobile-text-center">
+                            <i class="bi bi-trophy text-info" style="font-size: 1.75rem;"></i>
+                        </div>
+                        <div class="flex-1 mobile-text-center">
+                            <h2 class="mb-1 fw-bold text-dark responsive-text">{{ "%.1f"|format(kpi_data.total_profit) }}</h2>
+                            <p class="text-muted mb-0 fw-medium responsive-text">总净利润</p>
+                            <div class="mt-2">
+                                <span class="badge bg-info bg-opacity-10 text-info">
+                                    <i class="bi bi-graph-up-arrow me-1"></i>万元
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 现代化详细KPI指标 -->
+    <div class="row mb-5 fade-in-up responsive-grid">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-lightning text-warning hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark text-gradient responsive-text">{{ kpi_data.stage_stats.get('建设执行', 0) }}</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">建设中</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-warning" style="width: 75%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in" style="animation-delay: 0.1s;">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle text-success hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark responsive-text">{{ kpi_data.stage_stats.get('并网运营', 0) }}</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">已运营</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in" style="animation-delay: 0.2s;">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-percent text-primary hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark text-gradient responsive-text">{{ "%.1f"|format(kpi_data.avg_roi) }}%</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">平均ROI</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-primary" style="width: {{ (kpi_data.avg_roi / 20 * 100) | round }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in" style="animation-delay: 0.3s;">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark text-secondary hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark responsive-text">{{ kpi_data.total_documents }}</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">文档总数</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-secondary" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in" style="animation-delay: 0.4s;">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-clock text-info hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark responsive-text">{{ kpi_data.recent_projects_count }}</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">近期活跃</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-info" style="width: 85%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+            <div class="card modern-card responsive-card text-center border-0 hover-lift zoom-in" style="animation-delay: 0.5s;">
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-graph-up-arrow text-success hover-bounce" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark responsive-text">{{ kpi_data.projects_with_analysis }}</h4>
+                    <p class="text-muted mb-0 fw-medium responsive-text">已分析</p>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: 90%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 现代化项目类型和阶段分布图表 -->
+    <div class="row mb-5 fade-in-up responsive-grid">
+        <div class="col-lg-6 col-md-12 col-12 mb-4">
+            <div class="card modern-card responsive-card border-0">
+                <div class="modern-card-header mobile-text-center">
+                    <div class="d-flex align-items-center justify-content-between responsive-flex">
+                        <h5 class="mb-0 fw-bold text-dark responsive-text">
+                            <i class="bi bi-pie-chart me-2 text-primary"></i>项目类型分布
+                        </h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-graph-up me-1"></i>统计
+                        </span>
+                    </div>
+                </div>
+                <div class="modern-card-body">
+                    {% for ptype, count in kpi_data.type_stats.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3 bg-light bg-opacity-50 hover-lift">
+                        <div class="d-flex align-items-center">
+                            <div class="type-indicator bg-primary me-3"></div>
+                            <div>
+                                <span class="fw-medium text-dark">{{ ptype }}</span>
+                                <div class="text-muted small mt-1">
+                                    <i class="bi bi-lightning me-1"></i>{{ "%.1f"|format(kpi_data.type_capacity.get(ptype, 0)) }}MW
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="mb-0 fw-bold text-primary">{{ count }}</h5>
+                            <small class="text-muted">项目</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-12 col-12 mb-4">
+            <div class="card modern-card responsive-card border-0">
+                <div class="modern-card-header mobile-text-center">
+                    <div class="d-flex align-items-center justify-content-between responsive-flex">
+                        <h5 class="mb-0 fw-bold text-dark responsive-text">
+                            <i class="bi bi-bar-chart me-2 text-success"></i>项目阶段分布
+                        </h5>
+                        <span class="badge bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-activity me-1"></i>进度
+                        </span>
+                    </div>
+                </div>
+                <div class="modern-card-body">
+                    {% set stage_colors = {
+                        '机会挖掘': 'secondary',
+                        '前期开发': 'info', 
+                        '投资决策': 'warning',
+                        '建设执行': 'primary',
+                        '并网运营': 'success'
+                    } %}
+                    {% set stage_icons = {
+                        '机会挖掘': 'bi-search',
+                        '前期开发': 'bi-gear', 
+                        '投资决策': 'bi-clipboard-check',
+                        '建设执行': 'bi-hammer',
+                        '并网运营': 'bi-check-circle'
+                    } %}
+                    {% for stage, count in kpi_data.stage_stats.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3 bg-light bg-opacity-50 hover-lift">
+                        <div class="d-flex align-items-center">
+                            <div class="stage-indicator bg-{{ stage_colors.get(stage, 'secondary') }} me-3"></div>
+                            <div>
+                                <span class="fw-medium text-dark">{{ stage }}</span>
+                                <div class="text-muted small mt-1">
+                                    <i class="{{ stage_icons.get(stage, 'bi-circle') }} me-1"></i>阶段状态
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="mb-0 fw-bold text-{{ stage_colors.get(stage, 'secondary') }}">{{ count }}</h5>
+                            <small class="text-muted">项目</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if projects %}
+    <div class="card modern-card responsive-card fade-in-up">
+        <div class="modern-card-header mobile-text-center">
+            <div class="d-flex align-items-center justify-content-between responsive-flex">
+                <h4 class="mb-0 fw-bold text-dark text-gradient responsive-text">
+                    <i class="bi bi-table me-2 text-primary hover-bounce"></i>项目列表
+                </h4>
+                <div class="d-flex align-items-center mobile-full-width mobile-stack gap-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary me-3">
+                        <i class="bi bi-list-ul me-1"></i>{{ projects|length }} 个项目
+                    </span>
+                    <div class="btn-group btn-group-sm mobile-hidden" role="group">
+                        <button type="button" class="btn btn-outline-secondary active hover-lift">
+                            <i class="bi bi-table"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary hover-lift">
+                            <i class="bi bi-grid-3x3"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modern-card-body p-0">
+            <div class="table-responsive desktop-only">
+                <table class="table modern-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="responsive-text">项目名称</th>
+                            <th class="responsive-text">项目类型</th>
+                            <th class="responsive-text">装机容量</th>
+                            <th class="responsive-text">当前阶段</th>
+                            <th class="responsive-text">项目经理</th>
+                            <th class="responsive-text">创建日期</th>
+                            <th class="text-center responsive-text">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr class="hover-lift">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-2 hover-bounce">
+                                            <i class="bi bi-folder-fill text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="fw-bold text-decoration-none text-dark hover-primary transition-all">
+                                            {{ project.name }}
+                                        </a>
+                                        <div class="text-muted small mt-1">
+                                            <i class="bi bi-hash me-1"></i>ID: {{ project.id }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 modern-badge hover-lift">
+                                    <i class="bi bi-tag me-1"></i>{{ project.project_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">
+                                        <i class="bi bi-lightning text-warning hover-bounce"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold text-dark">{{ project.capacity_mw }}</span>
+                                        <small class="text-muted ms-1">MW</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% set stage_class = {
+                                    '机会挖掘': 'stage-opportunity',
+                                    '前期开发': 'stage-development', 
+                                    '投资决策': 'stage-decision',
+                                    '建设执行': 'stage-construction',
+                                    '并网运营': 'stage-operation'
+                                } %}
+                                <span class="stage-badge {{ stage_class.get(project.current_stage, 'stage-opportunity') }}">
+                                    {{ project.current_stage }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">
+                                        <div class="rounded-circle bg-secondary bg-opacity-10 p-1">
+                                            <i class="bi bi-person text-secondary"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="fw-medium text-dark">{{ project.manager.username }}</span>
+                                        <div class="text-muted small">
+                                            <i class="bi bi-shield-check me-1"></i>项目经理
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">
+                                        <i class="bi bi-calendar3 text-info"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-medium text-dark">{{ project.created_at.strftime('%Y-%m-%d') }}</span>
+                                        <div class="text-muted small">
+                                            {{ project.created_at.strftime('%H:%M') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm table-actions d-flex flex-wrap gap-1" role="group">
+                                    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" 
+                                       class="btn btn-outline-primary hover-lift transition-all" title="查看详情">
+                                        <i class="bi bi-eye"></i><span class="mobile-hidden ms-1">查看</span>
+                                    </a>
+                                    {% if current_user.role in ['项目经理', '管理员'] or current_user.id == project.manager_id %}
+                                    <a href="{{ url_for('main.edit_project', project_id=project.id) }}" 
+                                       class="btn btn-outline-secondary hover-lift transition-all" title="编辑项目">
+                                        <i class="bi bi-pencil"></i><span class="mobile-hidden ms-1">编辑</span>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger hover-lift transition-all" 
+                                            onclick="deleteProject({{ project.id }}, '{{ project.name }}')" title="删除项目">
+                                        <i class="bi bi-trash"></i><span class="mobile-hidden ms-1">删除</span>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 移动端卡片视图 -->
+            <div class="mobile-only">
+                {% for project in projects %}
+                <div class="card mb-3 responsive-card">
+                    <div class="card-body">
+                        <div class="row responsive-grid">
+                            <div class="col-12 mb-3">
+                                <div class="d-flex align-items-center mobile-text-center">
+                                    <div class="me-3">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                                            <i class="bi bi-folder-fill text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1 fw-bold responsive-text">
+                                            <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="text-decoration-none text-dark">
+                                                {{ project.name }}
+                                            </a>
+                                        </h6>
+                                        <small class="text-muted">ID: {{ project.id }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-muted d-block responsive-text">项目类型</small>
+                                <span class="badge bg-primary bg-opacity-10 text-primary">{{ project.project_type }}</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-muted d-block responsive-text">装机容量</small>
+                                <span class="fw-bold responsive-text">{{ project.capacity_mw }} MW</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-muted d-block responsive-text">当前阶段</small>
+                                {% set stage_class = {
+                                    '机会挖掘': 'stage-opportunity',
+                                    '前期开发': 'stage-development', 
+                                    '投资决策': 'stage-decision',
+                                    '建设执行': 'stage-construction',
+                                    '并网运营': 'stage-operation'
+                                } %}
+                                <span class="stage-badge {{ stage_class.get(project.current_stage, 'stage-opportunity') }}">{{ project.current_stage }}</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-muted d-block responsive-text">项目经理</small>
+                                <span class="fw-medium responsive-text">{{ project.manager.username }}</span>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <small class="text-muted d-block responsive-text">创建日期</small>
+                                <span class="fw-medium responsive-text">{{ project.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex gap-2 mobile-full-width">
+                                    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-outline-primary btn-sm flex-1">
+                                        <i class="bi bi-eye me-1"></i>查看
+                                    </a>
+                                    {% if current_user.role in ['项目经理', '管理员'] or current_user.id == project.manager_id %}
+                                    <a href="{{ url_for('main.edit_project', project_id=project.id) }}" class="btn btn-outline-secondary btn-sm flex-1">
+                                        <i class="bi bi-pencil me-1"></i>编辑
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger btn-sm flex-1" onclick="deleteProject({{ project.id }}, '{{ project.name }}')">
+                                        <i class="bi bi-trash me-1"></i>删除
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="modern-empty-state responsive-card fade-in-up mobile-text-center">
+        <div class="modern-empty-state-icon">
+            <i class="bi bi-folder-x"></i>
+        </div>
+        <div class="empty-state-title fw-bold text-dark mb-3 text-gradient responsive-text">暂无项目</div>
+        <div class="empty-state-description text-muted mb-4 text-shadow responsive-text">
+            {% if current_user.is_anonymous %}
+            请先登录以查看和管理您的项目。
+            {% else %}
+            开始创建您的第一个新能源项目吧！
+            {% endif %}
+        </div>
+        <div class="d-flex justify-content-center gap-3 mobile-stack mobile-full-width">
+            {% if not current_user.is_anonymous %}
+            <a href="{{ url_for('main.create_project') }}" class="btn btn-primary btn-lg hover-lift px-4 glow mobile-full-width">
+                <i class="bi bi-plus-circle me-2"></i>创建新项目
+            </a>
+            <button class="btn btn-outline-secondary btn-lg hover-lift px-4 mobile-full-width" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-2"></i>刷新页面
+            </button>
+            {% else %}
+            <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg hover-lift px-4 glow mobile-full-width">
+                <i class="bi bi-box-arrow-in-right me-2"></i>立即登录
+            </a>
+            {% endif %}
+        </div>
+        <div class="mt-4">
+            <small class="text-muted responsive-text">
+                <i class="bi bi-info-circle me-1"></i>
+                需要帮助？查看 <a href="#" class="text-decoration-none text-primary hover-lift">用户指南</a>
+            </small>
+        </div>
+    </div>
+    {% endif %}
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg modern-card responsive-card">
+                <div class="modal-header border-0 pb-0 mobile-text-center">
+                    <h5 class="modal-title fw-bold text-dark text-gradient responsive-text">
+                        <div class="d-flex align-items-center responsive-flex">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-2 me-3 hover-bounce">
+                                <i class="bi bi-exclamation-triangle text-warning"></i>
+                            </div>
+                            <span>确认删除项目</span>
+                        </div>
+                    </h5>
+                    <button type="button" class="btn-close hover-scale" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="text-center mb-4 mobile-text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-folder-x display-4 text-danger opacity-75 hover-bounce"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2 text-shadow responsive-text">您确定要删除项目吗？</h6>
+                        <p class="mb-2 responsive-text">项目名称：<span class="fw-bold text-primary text-gradient" id="projectName"></span></p>
+                    </div>
+                    <div class="alert alert-warning border-0 bg-warning bg-opacity-10 modern-badge responsive-card">
+                        <div class="d-flex align-items-start responsive-flex">
+                            <i class="bi bi-info-circle text-warning me-2 mt-1 pulse"></i>
+                            <div>
+                                <strong class="text-warning responsive-text">重要提醒</strong>
+                                <p class="mb-0 small text-muted mt-1 responsive-text">
+                                    此操作不可撤销，项目的所有相关数据（包括文档、进度记录、财务数据等）都将被永久删除。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 mobile-stack gap-2">
+                    <button type="button" class="btn btn-outline-secondary hover-lift px-4 mobile-full-width" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>取消
+                    </button>
+                    <form id="deleteForm" method="post" style="display: inline;" class="mobile-full-width">
+                        <button type="submit" class="btn btn-danger hover-lift px-4 glow mobile-full-width">
+                            <i class="bi bi-trash me-2"></i>确认删除
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function deleteProject(projectId, projectName) {
+            document.getElementById('projectName').textContent = projectName;
+            document.getElementById('deleteForm').action = `/delete_project/${projectId}`;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+{% endblock %}

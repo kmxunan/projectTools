@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 text-gray-800">{{ title }}</h1>
+                <a href="{{ url_for('main.admin_cost_models') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回模型列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ title }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.project_type.label(class="form-label") }}
+                                    {{ form.project_type(class="form-control", readonly=true) }}
+                                    <small class="form-text text-muted">项目类型不可修改</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.unit_cost_label.label(class="form-label") }}
+                                    {{ form.unit_cost_label(class="form-control") }}
+                                    {% if form.unit_cost_label.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.unit_cost_label.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">例如：元/MW</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.cost_items_json.label(class="form-label") }}
+                            {{ form.cost_items_json(class="form-control", rows="10", style="font-family: monospace;") }}
+                            {% if form.cost_items_json.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.cost_items_json.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                JSON格式的成本项目配置。格式示例：
+                                <code>{"光伏组件": 2800000, "逆变器": 350000, "支架系统": 280000}</code>
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.cost_details_json.label(class="form-label") }}
+                            {{ form.cost_details_json(class="form-control", rows="15", style="font-family: monospace;") }}
+                            {% if form.cost_details_json.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.cost_details_json.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                JSON格式的详细成本构成。包含每个成本项目的详细分解。
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.submit(class="btn btn-primary btn-block") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{{ url_for('main.admin_cost_models') }}" class="btn btn-secondary btn-block">取消</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON格式帮助 -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">JSON格式说明</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">成本项目 (cost_items) 格式：</h6>
+                            <pre class="bg-light p-3"><code>{
+  "光伏组件": 2800000,
+  "逆变器": 350000,
+  "支架系统": 280000,
+  "电气设备": 420000,
+  "土建工程": 210000,
+  "安装调试": 140000,
+  "其他费用": 300000
+}</code></pre>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">详细成本构成 (cost_details) 格式：</h6>
+                            <pre class="bg-light p-3"><code>{
+  "光伏组件": {
+    "单晶硅组件": 2500000,
+    "组件运输费": 200000,
+    "组件安装费": 100000
+  },
+  "逆变器": {
+    "集中式逆变器": 300000,
+    "逆变器安装": 50000
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>提示：</strong>
+                        <ul class="mb-0">
+                            <li>所有数值单位为：元/MW</li>
+                            <li>JSON格式要求严格，注意逗号和引号</li>
+                            <li>可以使用在线JSON验证工具检查格式</li>
+                            <li>修改后会影响新的成本估算计算</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if cost_model %}
+    <!-- 当前模型信息 -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">当前模型信息</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>模型ID:</strong> {{ cost_model.id }}</p>
+                            <p><strong>项目类型:</strong> 
+                                <span class="badge badge-{% if cost_model.project_type == '集中式光伏' %}success{% else %}info{% endif %}">
+                                    {{ cost_model.project_type }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>单位标签:</strong> {{ cost_model.unit_cost_label }}</p>
+                            <p><strong>成本项目数:</strong> {{ cost_model.cost_items|length if cost_model.cost_items else 0 }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>总成本/MW:</strong> 
+                                {% if cost_model.cost_items %}
+                                    {{ "{:,.0f}".format(cost_model.cost_items.values()|sum) }} 元
+                                {% else %}
+                                    未配置
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// JSON格式化和验证
+function formatJSON(textareaId) {
+    const textarea = document.getElementById(textareaId);
+    try {
+        const parsed = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(parsed, null, 2);
+        textarea.classList.remove('is-invalid');
+        textarea.classList.add('is-valid');
+    } catch (e) {
+        textarea.classList.remove('is-valid');
+        textarea.classList.add('is-invalid');
+        alert('JSON格式错误: ' + e.message);
+    }
+}
+
+// 添加格式化按钮
+$(document).ready(function() {
+    // 为JSON文本框添加格式化功能
+    $('textarea[id$="_json"]').each(function() {
+        const textarea = $(this);
+        const formatBtn = $('<button type="button" class="btn btn-sm btn-outline-secondary mt-1">格式化JSON</button>');
+        formatBtn.click(function() {
+            formatJSON(textarea.attr('id'));
+        });
+        textarea.after(formatBtn);
+    });
+});
+</script>
+
+<style>
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+pre {
+    font-size: 0.85em;
+}
+.is-valid {
+    border-color: #28a745;
+}
+.is-invalid {
+    border-color: #dc3545;
+}
+</style>
+{% endblock %}

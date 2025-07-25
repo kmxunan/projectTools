@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 text-gray-800">{{ title }}</h1>
+                <a href="{{ url_for('main.admin_projects') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回项目列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ title }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.project_type.label(class="form-label") }}
+                                    {{ form.project_type(class="form-control") }}
+                                    {% if form.project_type.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.project_type.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.capacity_mw.label(class="form-label") }}
+                                    {{ form.capacity_mw(class="form-control") }}
+                                    {% if form.capacity_mw.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.capacity_mw.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.current_stage.label(class="form-label") }}
+                                    {{ form.current_stage(class="form-control") }}
+                                    {% if form.current_stage.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.current_stage.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.manager_id.label(class="form-label") }}
+                                    {{ form.manager_id(class="form-control") }}
+                                    {% if form.manager_id.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.manager_id.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">选择项目经理</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.location.label(class="form-label") }}
+                                    {{ form.location(class="form-control") }}
+                                    {% if form.location.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.location.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">项目所在地区</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="4") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">项目详细描述（可选）</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.submit(class="btn btn-primary btn-block") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{{ url_for('main.admin_projects') }}" class="btn btn-secondary btn-block">取消</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% if project %}
+        <div class="col-md-4">
+            <!-- 项目信息卡片 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">项目信息</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>项目ID:</strong> {{ project.id }}</p>
+                    <p><strong>创建时间:</strong> {{ project.created_at.strftime('%Y-%m-%d %H:%M') if project.created_at else '未知' }}</p>
+                    <p><strong>当前状态:</strong> 
+                        <span class="badge badge-{% if project.current_stage == '并网运营' %}success{% elif project.current_stage == '建设执行' %}warning{% elif project.current_stage == '投资决策' %}info{% else %}secondary{% endif %}">
+                            {{ project.current_stage }}
+                        </span>
+                    </p>
+                    <p><strong>项目类型:</strong> 
+                        <span class="badge badge-{% if project.project_type == '集中式光伏' %}success{% else %}info{% endif %}">
+                            {{ project.project_type }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 项目数据 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">项目数据</h6>
+                </div>
+                <div class="card-body">
+                    {% set profit_analysis = project.profit_analyses.first() %}
+                    {% if profit_analysis %}
+                        <p><strong>总造价:</strong> 
+                            {% if profit_analysis.total_project_cost %}
+                                {{ "{:,.0f}".format(profit_analysis.total_project_cost) }} 万元
+                            {% else %}
+                                未计算
+                            {% endif %}
+                        </p>
+                        <p><strong>预计收益:</strong> 
+                            {% if profit_analysis.total_income %}
+                                {{ "{:,.0f}".format(profit_analysis.total_income) }} 万元
+                            {% else %}
+                                未计算
+                            {% endif %}
+                        </p>
+                        <p><strong>利润率:</strong> 
+                            {% if profit_analysis.market_profit_rate %}
+                                {{ profit_analysis.market_profit_rate }}%
+                            {% else %}
+                                未设置
+                            {% endif %}
+                        </p>
+                    {% else %}
+                        <p class="text-muted">暂无财务数据</p>
+                        <a href="{{ url_for('main.cost_estimation', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                            开始成本估算
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye"></i> 查看详情
+                        </a>
+                        <a href="{{ url_for('main.cost_estimation', project_id=project.id) }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-calculator"></i> 成本估算
+                        </a>
+                        <a href="{{ url_for('main.profit_analysis', project_id=project.id) }}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-chart-line"></i> 收益分析
+                        </a>
+                        <hr>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="confirmDelete({{ project.id }}, '{{ project.name }}')">
+                            <i class="fas fa-trash"></i> 删除项目
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if project %}
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除项目 <strong id="deleteProjectName"></strong> 吗？</p>
+                <p class="text-danger">此操作将同时删除项目的所有相关数据，且不可撤销！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(projectId, projectName) {
+    document.getElementById('deleteProjectName').textContent = projectName;
+    document.getElementById('deleteForm').action = '/delete_project/' + projectId;
+    $('#deleteModal').modal('show');
+}
+</script>
+{% endif %}
+
+<style>
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.d-grid {
+    display: grid;
+}
+.gap-2 {
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}

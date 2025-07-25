@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}管理员仪表板{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12 mobile-text-center">
+            <h1 class="h3 mb-0 text-gray-800 responsive-text">管理员仪表板</h1>
+            <p class="text-muted responsive-text">系统概览和快速管理</p>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4 responsive-grid">
+        <div class="col-xl-3 col-md-6 col-12 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 responsive-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center responsive-flex">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 responsive-text">
+                                用户总数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 responsive-text">{{ total_users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 responsive-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center responsive-flex">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1 responsive-text">
+                                项目总数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 responsive-text">{{ total_projects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 responsive-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center responsive-flex">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1 responsive-text">
+                                造价模型数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 responsive-text">{{ total_cost_models }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 col-12 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 responsive-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center responsive-flex">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 responsive-text">
+                                系统状态</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 responsive-text">正常</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-server fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow responsive-card">
+                <div class="card-header py-3 mobile-text-center">
+                    <h6 class="m-0 font-weight-bold text-primary responsive-text">快速操作</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row responsive-grid">
+                        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+                            <a href="{{ url_for('main.admin_users') }}" class="btn btn-primary btn-block mobile-full-width responsive-text">
+                                <i class="fas fa-users mb-2"></i><br>
+                                用户管理
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+                            <a href="{{ url_for('main.admin_projects') }}" class="btn btn-success btn-block mobile-full-width responsive-text">
+                                <i class="fas fa-project-diagram mb-2"></i><br>
+                                项目管理
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+                            <a href="{{ url_for('main.admin_cost_models') }}" class="btn btn-info btn-block mobile-full-width responsive-text">
+                                <i class="fas fa-calculator mb-2"></i><br>
+                                造价模型
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+                            <a href="{{ url_for('main.admin_documents') }}" class="btn btn-secondary btn-block mobile-full-width responsive-text">
+                                <i class="fas fa-file-alt mb-2"></i><br>
+                                文档管理
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
+                            <a href="{{ url_for('main.admin_system_info') }}" class="btn btn-warning btn-block mobile-full-width responsive-text">
+                                <i class="fas fa-info-circle mb-2"></i><br>
+                                系统信息
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近项目和用户 -->
+    <div class="row responsive-grid">
+        <div class="col-lg-6 col-12 mb-4">
+            <div class="card shadow responsive-card h-100">
+                <div class="card-header py-3 mobile-text-center">
+                    <h6 class="m-0 font-weight-bold text-primary responsive-text">最近项目</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_projects %}
+                        <!-- 桌面端表格视图 -->
+                        <div class="table-responsive desktop-only">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="responsive-text">项目名称</th>
+                                        <th class="responsive-text">类型</th>
+                                        <th class="responsive-text">阶段</th>
+                                        <th class="responsive-text">创建时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in recent_projects %}
+                                    <tr>
+                                        <td class="responsive-text"><a href="{{ url_for('main.project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+                                        <td class="responsive-text">{{ project.project_type }}</td>
+                                        <td class="responsive-text">{{ project.current_stage }}</td>
+                                        <td class="responsive-text">{{ project.created_at.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 移动端卡片视图 -->
+                        <div class="mobile-only">
+                            {% for project in recent_projects %}
+                            <div class="mobile-card">
+                                <div class="mobile-card-header">
+                                    <div class="mobile-card-title">
+                                        <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                            <strong class="responsive-text">{{ project.name }}</strong>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="mobile-card-body">
+                                    <div class="mobile-card-info">
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">类型:</span>
+                                            <span class="info-value responsive-text">{{ project.project_type }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">阶段:</span>
+                                            <span class="info-value responsive-text">{{ project.current_stage }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">创建时间:</span>
+                                            <span class="info-value responsive-text">{{ project.created_at.strftime('%Y-%m-%d') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-project-diagram fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0 responsive-text mobile-text-center">暂无项目</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-12 mb-4">
+            <div class="card shadow responsive-card h-100">
+                <div class="card-header py-3 mobile-text-center">
+                    <h6 class="m-0 font-weight-bold text-primary responsive-text">最近用户</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_users %}
+                        <!-- 桌面端表格视图 -->
+                        <div class="table-responsive desktop-only">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="responsive-text">用户名</th>
+                                        <th class="responsive-text">邮箱</th>
+                                        <th class="responsive-text">角色</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in recent_users %}
+                                    <tr>
+                                        <td class="responsive-text">{{ user.username }}</td>
+                                        <td class="responsive-text">{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge badge-{% if user.role == '管理员' %}danger{% elif user.role == '项目经理' %}warning{% elif user.role == '财务/管理层' %}info{% else %}secondary{% endif %} responsive-text">
+                                                {{ user.role }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 移动端卡片视图 -->
+                        <div class="mobile-only">
+                            {% for user in recent_users %}
+                            <div class="mobile-card">
+                                <div class="mobile-card-header">
+                                    <div class="mobile-card-title">
+                                        <strong class="responsive-text">{{ user.username }}</strong>
+                                        <span class="badge badge-{% if user.role == '管理员' %}danger{% elif user.role == '项目经理' %}warning{% elif user.role == '财务/管理层' %}info{% else %}secondary{% endif %} ms-2 responsive-text">
+                                            {{ user.role }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mobile-card-body">
+                                    <div class="mobile-card-info">
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">邮箱:</span>
+                                            <span class="info-value responsive-text">{{ user.email }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0 responsive-text mobile-text-center">暂无用户</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}

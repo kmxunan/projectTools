@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center responsive-flex">
+                <div class="mobile-text-center">
+                    <h1 class="responsive-title mb-0 text-gray-800 responsive-text">用户管理</h1>
+                    <p class="text-muted mb-0 responsive-text">管理系统用户和权限</p>
+                </div>
+                <div class="mobile-full-width mobile-stack gap-2">
+                    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary mobile-full-width mb-2 responsive-text">
+                        <i class="fas fa-arrow-left"></i> <span class="mobile-hidden">返回仪表板</span><span class="desktop-hidden">返回</span>
+                    </a>
+                    <a href="{{ url_for('main.admin_create_user') }}" class="btn btn-primary mobile-full-width responsive-text">
+                        <i class="fas fa-plus"></i> <span class="mobile-hidden">创建用户</span><span class="desktop-hidden">创建</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow responsive-card">
+                <div class="card-header py-3 mobile-text-center">
+                    <h6 class="m-0 font-weight-bold text-primary responsive-text">用户列表</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if users %}
+                        <!-- 桌面端表格视图 -->
+                        <div class="table-responsive desktop-only">
+                            <table class="table table-bordered mb-0" id="usersTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="responsive-text">ID</th>
+                                        <th class="responsive-text">用户名</th>
+                                        <th class="responsive-text">邮箱</th>
+                                        <th class="responsive-text">角色</th>
+                                        <th class="responsive-text">项目数量</th>
+                                        <th class="responsive-text">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td class="responsive-text">{{ user.id }}</td>
+                                        <td class="responsive-text">{{ user.username }}</td>
+                                        <td class="responsive-text">{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge badge-{% if user.role == '管理员' %}danger{% elif user.role == '项目经理' %}warning{% elif user.role == '财务/管理层' %}info{% else %}secondary{% endif %} responsive-text">
+                                                {{ user.role }}
+                                            </span>
+                                        </td>
+                                        <td class="responsive-text">{{ user.projects|length }}</td>
+                                        <td>
+                                            <div class="table-actions d-flex flex-wrap gap-1">
+                                                <a href="{{ url_for('main.admin_edit_user', user_id=user.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary responsive-text" title="编辑">
+                                                    <i class="fas fa-edit"></i> <span class="mobile-hidden">编辑</span>
+                                                </a>
+                                                {% if user.id != current_user.id %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger responsive-text" 
+                                                        onclick="confirmDelete({{ user.id }}, '{{ user.username }}')" title="删除">
+                                                    <i class="fas fa-trash"></i> <span class="mobile-hidden">删除</span>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 移动端卡片视图 -->
+                        <div class="mobile-only">
+                            {% for user in users %}
+                            <div class="mobile-card responsive-card">
+                                <div class="mobile-card-header">
+                                    <div class="mobile-card-title">
+                                        <strong class="responsive-text">{{ user.username }}</strong>
+                                        <span class="badge badge-{% if user.role == '管理员' %}danger{% elif user.role == '项目经理' %}warning{% elif user.role == '财务/管理层' %}info{% else %}secondary{% endif %} ms-2 responsive-text">
+                                            {{ user.role }}
+                                        </span>
+                                    </div>
+                                    <div class="mobile-card-actions">
+                                        <a href="{{ url_for('main.admin_edit_user', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if user.id != current_user.id %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete({{ user.id }}, '{{ user.username }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mobile-card-body">
+                                    <div class="mobile-card-info">
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">ID:</span>
+                                            <span class="info-value responsive-text">{{ user.id }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">邮箱:</span>
+                                            <span class="info-value responsive-text">{{ user.email }}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label responsive-text">项目数量:</span>
+                                            <span class="info-value responsive-text">{{ user.projects|length }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 mobile-text-center">
+                            <div class="empty-state responsive-card">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted mb-3 responsive-text">暂无用户数据</h5>
+                                <p class="text-muted mb-4 responsive-text">系统中还没有用户，创建第一个用户开始使用</p>
+                                <a href="{{ url_for('main.admin_create_user') }}" class="btn btn-primary mobile-full-width responsive-text">
+                                    <i class="fas fa-plus"></i> 创建第一个用户
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content responsive-card">
+            <div class="modal-header mobile-text-center">
+                <h5 class="modal-title responsive-text">确认删除</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body mobile-text-center">
+                <p class="responsive-text">确定要删除用户 <strong id="deleteUserName"></strong> 吗？</p>
+                <p class="text-danger responsive-text">此操作不可撤销！</p>
+            </div>
+            <div class="modal-footer mobile-stack gap-2">
+                <button type="button" class="btn btn-secondary mobile-full-width responsive-text" data-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;" class="mobile-full-width">
+                    <button type="submit" class="btn btn-danger mobile-full-width responsive-text">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(userId, username) {
+    document.getElementById('deleteUserName').textContent = username;
+    document.getElementById('deleteForm').action = '/admin/users/' + userId + '/delete';
+    $('#deleteModal').modal('show');
+}
+
+// 初始化数据表
+$(document).ready(function() {
+    $('#usersTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Chinese.json"
+        },
+        "pageLength": 25,
+        "order": [[ 0, "desc" ]]
+    });
+});
+</script>
+
+<style>
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+    .responsive-flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+    
+    .mobile-text-center {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .mobile-full-width {
+        width: 100%;
+    }
+    
+    .mobile-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .mobile-hidden {
+        display: none;
+    }
+    
+    .desktop-hidden {
+        display: inline;
+    }
+    
+    .desktop-only {
+        display: none;
+    }
+    
+    .mobile-only {
+        display: block;
+    }
+    
+    .responsive-title {
+        font-size: 1.5rem !important;
+    }
+    
+    .responsive-text {
+        font-size: 0.9rem;
+    }
+    
+    .responsive-card {
+        border-radius: 0.5rem;
+        border: none;
+    }
+    
+    .mobile-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        background: white;
+    }
+    
+    .mobile-card-header {
+        padding: 1rem;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .mobile-card-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .mobile-card-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    .mobile-card-body {
+        padding: 1rem;
+    }
+    
+    .mobile-card-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .info-value {
+        color: #495057;
+        font-size: 0.875rem;
+        text-align: right;
+        word-break: break-all;
+    }
+    
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .desktop-hidden {
+        display: none;
+    }
+    
+    .mobile-only {
+        display: none;
+    }
+    
+    .desktop-only {
+        display: block;
+    }
+    
+    .responsive-title {
+        font-size: 1.75rem !important;
+    }
+}
+</style>
+{% endblock %}

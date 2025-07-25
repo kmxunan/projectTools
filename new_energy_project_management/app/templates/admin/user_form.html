@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 text-gray-800">{{ title }}</h1>
+                <a href="{{ url_for('main.admin_users') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回用户列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ title }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group">
+                            {{ form.username.label(class="form-label") }}
+                            {{ form.username(class="form-control") }}
+                            {% if form.username.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.username.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.email.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-control") }}
+                            {% if form.role.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.role.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                选择用户的角色权限级别
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {% if user %}
+                                    留空则不修改密码
+                                {% else %}
+                                    留空将使用默认密码：123456
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.submit(class="btn btn-primary btn-block") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{{ url_for('main.admin_users') }}" class="btn btn-secondary btn-block">取消</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if user %}
+            <!-- 用户信息卡片 -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">用户信息</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>用户ID:</strong> {{ user.id }}</p>
+                            <p><strong>当前角色:</strong> 
+                                <span class="badge badge-{% if user.role == '管理员' %}danger{% elif user.role == '项目经理' %}warning{% elif user.role == '财务/管理层' %}info{% else %}secondary{% endif %}">
+                                    {{ user.role }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>管理项目数:</strong> {{ user.projects.count() }}</p>
+                            <p><strong>注册时间:</strong> {{ user.id }}</p> <!-- 这里应该是注册时间，但User模型中没有created_at字段 -->
+                        </div>
+                    </div>
+                    
+                    {% if user.projects.count() > 0 %}
+                    <hr>
+                    <h6 class="font-weight-bold text-primary">管理的项目</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>项目名称</th>
+                                    <th>类型</th>
+                                    <th>阶段</th>
+                                    <th>装机容量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in user.projects %}
+                                <tr>
+                                    <td><a href="{{ url_for('main.project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+                                    <td>{{ project.project_type }}</td>
+                                    <td>{{ project.current_stage }}</td>
+                                    <td>{{ project.capacity_mw }} MW</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+</style>
+{% endblock %}

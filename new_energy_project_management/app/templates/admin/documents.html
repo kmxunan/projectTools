@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-file-alt"></i> 文档管理</h4>
+                    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> 返回后台
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="searchInput" placeholder="搜索文档名称、项目或上传者...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="stageFilter">
+                                    <option value="">所有阶段</option>
+                                    <option value="前期准备">前期准备</option>
+                                    <option value="设计阶段">设计阶段</option>
+                                    <option value="施工阶段">施工阶段</option>
+                                    <option value="验收阶段">验收阶段</option>
+                                    <option value="运营维护">运营维护</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted">
+                                    共 {{ documents|length }} 个文档
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="documentsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>文档名称</th>
+                                    <th>所属项目</th>
+                                    <th>项目阶段</th>
+                                    <th>文件大小</th>
+                                    <th>文件类型</th>
+                                    <th>描述</th>
+                                    <th>上传者</th>
+                                    <th>上传时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for document in documents %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-alt text-primary me-2"></i>
+                                        {{ document.filename }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('main.project_detail', project_id=document.project.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ document.project.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ document.project_stage }}</span>
+                                    </td>
+                                    <td>{{ "%.2f"|format(document.file_size / 1024 / 1024) }} MB</td>
+                                    <td>
+                                        <small class="text-muted">{{ document.file_type }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 150px;" 
+                                              title="{{ document.description or '无描述' }}">
+                                            {{ document.description or '无描述' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ document.uploader.username }}</td>
+                                    <td>{{ document.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('main.download_document', document_id=document.id) }}" 
+                                               class="btn btn-outline-primary" title="下载">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ url_for('main.project_documents', project_id=document.project.id) }}" 
+                                               class="btn btn-outline-info" title="查看项目文档">
+                                                <i class="fas fa-folder-open"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" 
+                                                    onclick="confirmDelete({{ document.id }}, '{{ document.filename }}')" title="删除">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暂无文档</h5>
+                        <p class="text-muted">系统中还没有任何项目文档。</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除文档 <strong id="deleteFileName"></strong> 吗？</p>
+                <p class="text-danger"><small>此操作不可撤销！</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 删除确认
+function confirmDelete(documentId, fileName) {
+    document.getElementById('deleteFileName').textContent = fileName;
+    document.getElementById('deleteForm').action = '/documents/' + documentId + '/delete';
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// 搜索和筛选功能
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const stageFilter = document.getElementById('stageFilter');
+    const table = document.getElementById('documentsTable');
+    
+    if (searchInput && stageFilter && table) {
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedStage = stageFilter.value;
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                if (cells.length > 0) {
+                    const fileName = cells[0].textContent.toLowerCase();
+                    const projectName = cells[1].textContent.toLowerCase();
+                    const uploader = cells[6].textContent.toLowerCase();
+                    const stage = cells[2].textContent.trim();
+                    
+                    const matchesSearch = fileName.includes(searchTerm) || 
+                                        projectName.includes(searchTerm) || 
+                                        uploader.includes(searchTerm);
+                    const matchesStage = !selectedStage || stage === selectedStage;
+                    
+                    row.style.display = (matchesSearch && matchesStage) ? '' : 'none';
+                }
+            }
+        }
+        
+        searchInput.addEventListener('input', filterTable);
+        stageFilter.addEventListener('change', filterTable);
+    }
+});
+</script>
+{% endblock %}

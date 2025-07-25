@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="新能源项目管理">
+    <title>{% if title %}{{ title }} - {% endif %}新能源项目管理平台</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="modern-layout">
+    <!-- 现代化导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark modern-navbar fixed-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand modern-brand" href="{{ url_for('main.index') }}">
+                <div class="brand-icon">
+                    <i class="bi bi-lightning-charge"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">登品科技</span>
+                    <span class="brand-subtitle">新能源项目管理平台</span>
+                </div>
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto ms-4">
+                    <li class="nav-item">
+                        <a class="nav-link modern-nav-link" href="{{ url_for('main.index') }}">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                            <span>项目看板</span>
+                        </a>
+                    </li>
+                    {% if not current_user.is_anonymous %}
+                    <li class="nav-item">
+                        <a class="nav-link modern-nav-link" href="{{ url_for('main.create_project') }}">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>创建项目</span>
+                        </a>
+                    </li>
+                    {% if current_user.role == '管理员' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i>
+                            <span>系统管理</span>
+                        </a>
+                        <ul class="dropdown-menu modern-dropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.admin_dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>管理仪表板</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.admin_users') }}"><i class="bi bi-people me-2"></i>用户管理</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.admin_projects') }}"><i class="bi bi-folder me-2"></i>项目管理</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.admin_cost_models') }}"><i class="bi bi-calculator me-2"></i>造价模型</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.is_anonymous %}
+                    <li class="nav-item">
+                        <a class="nav-link modern-nav-link" href="{{ url_for('main.login') }}">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>登录</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm ms-2" href="{{ url_for('main.register') }}">
+                            注册
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link modern-nav-link dropdown-toggle user-menu" href="#" role="button" data-bs-toggle="dropdown">
+                            <div class="user-avatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <span class="user-name">{{ current_user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu modern-dropdown dropdown-menu-end">
+                            <li class="dropdown-header">
+                                <div class="user-info">
+                                    <div class="user-name">{{ current_user.username }}</div>
+                                    <div class="user-role">{{ current_user.role }}</div>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>个人资料</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <div class="container-fluid">
+            <!-- Flash消息 -->
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="row">
+                <div class="col-12">
+                    {% for message in messages %}
+                    <div class="alert modern-alert alert-dismissible fade show" role="alert">
+                        <div class="alert-content">
+                            <i class="bi bi-info-circle alert-icon"></i>
+                            <span class="alert-message">{{ message }}</span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+            
+            <!-- 页面内容 -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <!-- 引入 JS 文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 响应式增强和交互优化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检测设备类型
+            const isMobile = window.innerWidth <= 768;
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // 为所有卡片添加淡入动画
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+            
+            // 只在非触摸设备上添加悬停效果
+            if (!isTouch) {
+                const tableRows = document.querySelectorAll('tbody tr');
+                tableRows.forEach(row => {
+                    row.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateX(5px)';
+                    });
+                    row.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateX(0)';
+                    });
+                });
+            }
+            
+            // 响应式导航栏优化
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            
+            if (navbarToggler && navbarCollapse) {
+                // 点击外部区域关闭导航菜单
+                document.addEventListener('click', function(e) {
+                    if (isMobile && !navbarCollapse.contains(e.target) && !navbarToggler.contains(e.target)) {
+                        const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                        if (bsCollapse && navbarCollapse.classList.contains('show')) {
+                            bsCollapse.hide();
+                        }
+                    }
+                });
+            }
+            
+            // 表格响应式优化
+            const tables = document.querySelectorAll('.table-responsive');
+            tables.forEach(table => {
+                // 添加滚动指示器
+                const wrapper = table.parentElement;
+                if (wrapper && table.scrollWidth > table.clientWidth) {
+                    wrapper.classList.add('has-scroll');
+                }
+                
+                // 监听滚动事件
+                table.addEventListener('scroll', function() {
+                    const isAtStart = this.scrollLeft === 0;
+                    const isAtEnd = this.scrollLeft >= (this.scrollWidth - this.clientWidth - 1);
+                    
+                    wrapper.classList.toggle('scroll-start', isAtStart);
+                    wrapper.classList.toggle('scroll-end', isAtEnd);
+                });
+            });
+            
+            // 表单优化
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    // 移动端输入优化
+                    if (isMobile) {
+                        input.addEventListener('focus', function() {
+                            // 防止iOS Safari缩放
+                            if (this.type !== 'file') {
+                                this.style.fontSize = '16px';
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // 模态框响应式优化
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('shown.bs.modal', function() {
+                    // 移动端模态框优化
+                    if (isMobile) {
+                        document.body.style.position = 'fixed';
+                        document.body.style.width = '100%';
+                    }
+                });
+                
+                modal.addEventListener('hidden.bs.modal', function() {
+                    if (isMobile) {
+                        document.body.style.position = '';
+                        document.body.style.width = '';
+                    }
+                });
+            });
+            
+            // 窗口大小变化时的响应式调整
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    // 重新检测设备类型
+                    const newIsMobile = window.innerWidth <= 768;
+                    if (newIsMobile !== isMobile) {
+                        location.reload(); // 简单的响应式重载
+                    }
+                }, 250);
+            });
+        });
+    </script>
+</body>
+</html>

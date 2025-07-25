@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center responsive-flex">
+                <div class="mobile-text-center">
+                    <h1 class="responsive-title mb-0 text-gray-800">项目管理</h1>
+                    <p class="text-muted mb-0 responsive-text">管理所有新能源项目</p>
+                </div>
+                <div class="mobile-full-width">
+                    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary me-2 mobile-full-width mb-2">
+                        <i class="fas fa-arrow-left"></i> <span class="mobile-hidden">返回仪表板</span><span class="desktop-hidden">返回</span>
+                    </a>
+                    <a href="{{ url_for('main.create_project') }}" class="btn btn-primary mobile-full-width">
+                        <i class="fas fa-plus"></i> <span class="mobile-hidden">创建项目</span><span class="desktop-hidden">新建</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 项目统计 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                项目总数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ projects|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                运营项目</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ projects|selectattr('current_stage', 'equalto', '并网运营')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                总装机容量</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.1f"|format(projects|sum(attribute='capacity_mw')) }} MW
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bolt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                建设中项目</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ projects|selectattr('current_stage', 'equalto', '建设执行')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hammer fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">项目列表</h6>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="projectsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>项目名称</th>
+                                        <th>类型</th>
+                                        <th>装机容量</th>
+                                        <th>当前阶段</th>
+                                        <th>项目经理</th>
+                                        <th>位置</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in projects %}
+                                    <tr>
+                                        <td>{{ project.id }}</td>
+                                        <td>
+                                            <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="font-weight-bold">
+                                                {{ project.name }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-{% if project.project_type == '集中式光伏' %}success{% else %}info{% endif %}">
+                                                {{ project.project_type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ project.capacity_mw }} MW</td>
+                                        <td>
+                                            <span class="badge badge-{% if project.current_stage == '并网运营' %}success{% elif project.current_stage == '建设执行' %}warning{% elif project.current_stage == '投资决策' %}info{% else %}secondary{% endif %}">
+                                                {{ project.current_stage }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if project.manager %}
+                                                {{ project.manager.username }}
+                                            {% else %}
+                                                <span class="text-muted">未分配</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ project.location or '-' }}</td>
+                                        <td>{{ project.created_at.strftime('%Y-%m-%d') if project.created_at else '-' }}</td>
+                                        <td>
+                            <div class="table-actions d-flex flex-wrap gap-1">
+                                <a href="{{ url_for('main.project_detail', project_id=project.id) }}" 
+                                   class="btn btn-sm btn-outline-info" title="查看详情">
+                                    <i class="fas fa-eye"></i> <span class="mobile-hidden">详情</span>
+                                </a>
+                                <a href="{{ url_for('main.admin_edit_project', project_id=project.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="编辑">
+                                    <i class="fas fa-edit"></i> <span class="mobile-hidden">编辑</span>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete({{ project.id }}, '{{ project.name }}')" title="删除">
+                                    <i class="fas fa-trash"></i> <span class="mobile-hidden">删除</span>
+                                </button>
+                            </div>
+                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">暂无项目数据</p>
+                            <a href="{{ url_for('main.create_project') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> 创建第一个项目
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除项目 <strong id="deleteProjectName"></strong> 吗？</p>
+                <p class="text-danger">此操作将同时删除项目的所有相关数据（成本估算、收益分析等），且不可撤销！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(projectId, projectName) {
+    document.getElementById('deleteProjectName').textContent = projectName;
+    document.getElementById('deleteForm').action = '/delete_project/' + projectId;
+    $('#deleteModal').modal('show');
+}
+
+// 初始化数据表
+$(document).ready(function() {
+    $('#projectsTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Chinese.json"
+        },
+        "pageLength": 25,
+        "order": [[ 0, "desc" ]],
+        "columnDefs": [
+            { "orderable": false, "targets": 8 } // 操作列不可排序
+        ]
+    });
+});
+</script>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}
